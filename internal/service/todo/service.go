@@ -61,8 +61,13 @@ func (s *service) Delete(ctx context.Context, id int) error {
 }
 
 func validate(task model.Task) error {
+	if task.ID <= 0 {
+		return appErrors.ErrInvalidTask
+	}
+
 	if task.Title == "" {
 		return appErrors.ErrTaskTitleIsEmpty
 	}
+
 	return nil
 }

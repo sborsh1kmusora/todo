@@ -3,10 +3,10 @@ package todo
 import (
 	"context"
 	"encoding/json"
-	"errors"
+	"log/slog"
 	"net/http"
+	"strconv"
 
-	appErrors "github.com/sborsh1kmusora/todo/internal/errors"
 	"github.com/sborsh1kmusora/todo/internal/model"
 )
 
@@ -20,39 +20,55 @@ type Service interface {
 
 type api struct {
 	serv Service
+	log  *slog.Logger
 }
 
-func New(s Service) api {
+func New(serv Service, log *slog.Logger) api {
 	return api{
-		serv: s,
+		serv: serv,
+		log:  log,
 	}
 }
 
-func (a *api) Create(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
+func (a *api) Todos(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodPost:
+		a.create(w, r)
+	case http.MethodGet:
+		a.list(w, r)
+	default:
+		a.log.Error("Method not allowed")
+		w.Header().Set("Allow", "GET, POST")
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
 	}
+}
 
-	ctx := r.Context()
-
-	var task model.Task
-	if err := json.NewDecoder(r.Body).Decode(&task); err != nil {
-		http.Error(w, "invalid body", http.StatusBadRequest)
-		return
+func (a *api) TodoById(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		a.get(w, r)
+	case http.MethodPut:
+		a.update(w, r)
+	case http.MethodDelete:
+		a.delete(w, r)
+	default:
+		a.log.Error("Method not allowed")
+		w.Header().Set("Allow", "GET, PUT, DELETE")
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
+}
 
-	if err := a.serv.Create(ctx, task); err != nil {
-		switch {
-		case errors.Is(err, appErrors.ErrTaskTitleIsEmpty):
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		case errors.Is(err, appErrors.ErrTaskAlreadyExist):
-			http.Error(w, err.Error(), http.StatusConflict)
-		default:
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-		return
-	}
+func parseIdFromPath(r *http.Request) (int, error) {
+	idStr := r.PathValue("id")
 
-	w.WriteHeader(http.StatusCreated)
+	return strconv.Atoi(idStr)
+}
+
+func parseReqBody[T any](r *http.Request, dst *T) error {
+	defer r.Body.Close()
+
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+
+	return dec.Decode(dst)
 }

@@ -4,14 +4,11 @@ import (
 	"context"
 	"errors"
 	"log/slog"
-	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
-
-	"github.com/joho/godotenv"
 
 	todoApi "github.com/sborsh1kmusora/todo/internal/api/todo"
 	todoRepo "github.com/sborsh1kmusora/todo/internal/repository/todo"
@@ -19,7 +16,7 @@ import (
 )
 
 const (
-	configPath = ".env"
+	serverAddr = "localhost:8080"
 
 	readHeaderTimeout = 10 * time.Second
 	shutdownTimeout   = 5 * time.Second
@@ -30,21 +27,17 @@ func main() {
 		slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
 	)
 
-	if err := godotenv.Load(configPath); err != nil {
-		log.Error("failed to load .env file", slog.String("error", err.Error()))
-		return
-	}
-
 	mux := http.NewServeMux()
 
 	repo := todoRepo.New()
 	service := todoServ.New(&repo)
-	api := todoApi.New(&service)
+	api := todoApi.New(&service, log)
 
-	mux.HandleFunc("/todos", api.Create)
+	mux.HandleFunc("/todos", api.Todos)
+	mux.HandleFunc("/todos/{id}", api.TodoById)
 
 	server := &http.Server{
-		Addr:              serverAddr(),
+		Addr:              serverAddr,
 		Handler:           mux,
 		ReadHeaderTimeout: readHeaderTimeout,
 	}
@@ -72,8 +65,4 @@ func main() {
 	}
 
 	log.Info("server stopped gracefully")
-}
-
-func serverAddr() string {
-	return net.JoinHostPort(os.Getenv("SERVER_HOST"), os.Getenv("SERVER_PORT"))
 }

@@ -61,6 +61,7 @@ func (r *repo) Update(_ context.Context, id int, task model.Task) error {
 		return appErrors.ErrTaskNotFound
 	}
 
+	task.ID = id
 	r.storage[id] = task
 
 	return nil
@@ -69,6 +70,10 @@ func (r *repo) Update(_ context.Context, id int, task model.Task) error {
 func (r *repo) Delete(_ context.Context, id int) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+
+	if _, ok := r.storage[id]; !ok {
+		return appErrors.ErrTaskNotFound
+	}
 
 	delete(r.storage, id)
 

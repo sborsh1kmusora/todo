@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	serverAddr = "localhost:8080"
+	serverAddr = "0.0.0.0:8080"
 
 	readHeaderTimeout = 10 * time.Second
 	shutdownTimeout   = 5 * time.Second

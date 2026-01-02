@@ -20,7 +20,7 @@ func (a *api) update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var task model.Task
-	if err := parseReqBody(r, &task); err != nil {
+	if err := a.parseReqBody(r, &task); err != nil {
 		a.log.Error("Error decoding update request", slog.Any("error", err))
 		http.Error(w, "invalid body", http.StatusBadRequest)
 		return

@@ -47,11 +47,11 @@ tasks:
         exit $ERR
 
   up-service:
-    desc : "Поднять сервис вместе с зависимостями"
+    desc : "Поднять сервис"
     cmds:
       - docker compose up -d --build
 
   down-service:
-    desc: "Остановить и удалить сервис вместе с зависимостями"
+    desc: "Остановить и удалить сервис"
     cmds:
       - docker compose down -v

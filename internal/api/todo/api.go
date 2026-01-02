@@ -3,6 +3,7 @@ package todo
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -10,10 +11,11 @@ import (
 	"github.com/sborsh1kmusora/todo/internal/model"
 )
 
+//go:generate mockgen -source=api.go -destination=mocks/service_mock.go -package=mocks
 type Service interface {
 	Create(context.Context, model.Task) error
 	Get(context.Context, int) (model.Task, error)
-	List(context.Context) ([]model.Task, error)
+	List(context.Context, model.TaskFilter) ([]model.Task, error)
 	Update(context.Context, int, model.Task) error
 	Delete(context.Context, int) error
 }
@@ -52,23 +54,28 @@ func (a *api) TodoById(w http.ResponseWriter, r *http.Request) {
 	case http.MethodDelete:
 		a.delete(w, r)
 	default:
-		a.log.Error("Method not allowed")
+		a.log.Error("method not allowed")
 		w.Header().Set("Allow", "GET, PUT, DELETE")
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
+}
+
+func (a *api) parseReqBody(r *http.Request, dst *model.Task) error {
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			a.log.Error("failed to close body")
+		}
+	}(r.Body)
+
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+
+	return dec.Decode(dst)
 }
 
 func parseIdFromPath(r *http.Request) (int, error) {
 	idStr := r.PathValue("id")
 
 	return strconv.Atoi(idStr)
-}
-
-func parseReqBody[T any](r *http.Request, dst *T) error {
-	defer r.Body.Close()
-
-	dec := json.NewDecoder(r.Body)
-	dec.DisallowUnknownFields()
-
-	return dec.Decode(dst)
 }

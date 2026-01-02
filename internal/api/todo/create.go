@@ -13,7 +13,7 @@ func (a *api) create(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	var task model.Task
-	if err := parseReqBody(r, &task); err != nil {
+	if err := a.parseReqBody(r, &task); err != nil {
 		a.log.Error("Error decoding task", slog.Any("error", err))
 		http.Error(w, "invalid body", http.StatusBadRequest)
 		return

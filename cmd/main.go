@@ -10,6 +10,9 @@ import (
 	"syscall"
 	"time"
 
+	httpSwagger "github.com/swaggo/http-swagger"
+
+	_ "github.com/sborsh1kmusora/todo/docs"
 	todoApi "github.com/sborsh1kmusora/todo/internal/api/todo"
 	todoRepo "github.com/sborsh1kmusora/todo/internal/repository/todo"
 	todoServ "github.com/sborsh1kmusora/todo/internal/service/todo"
@@ -22,6 +25,11 @@ const (
 	shutdownTimeout   = 5 * time.Second
 )
 
+// @title Todo API
+// @version 1.0
+// @description REST API для управления задачами
+// @host localhost:8080
+// @BasePath /
 func main() {
 	log := slog.New(
 		slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
@@ -35,6 +43,8 @@ func main() {
 
 	mux.HandleFunc("/todos", api.Todos)
 	mux.HandleFunc("/todos/{id}", api.TodoById)
+
+	mux.Handle("/swagger/", httpSwagger.WrapHandler)
 
 	server := &http.Server{
 		Addr:              serverAddr,

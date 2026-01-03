@@ -9,13 +9,25 @@ import (
 	appErrors "github.com/sborsh1kmusora/todo/internal/errors"
 )
 
+// GetTask godoc
+// @Summary Получить задачу
+// @Description Возвращает задачу по идентификатору
+// @Tags todos
+// @Accept json
+// @Produce json
+// @Param id path int true "ID задачи"
+// @Success 200 {object} model.Task
+// @Failure 400 {object} errors.ErrorResponse "Некорректный ID"
+// @Failure 404 {object} errors.ErrorResponse "Задача не найдена"
+// @Failure 500 {object} errors.ErrorResponse "Внутренняя ошибка сервера"
+// @Router /todos/{id} [get]
 func (a *api) get(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	id, err := parseIdFromPath(r)
 	if err != nil {
 		a.log.Error("error parsing id", slog.Int("id", id), slog.Any("error", err))
-		http.Error(w, "invalid id", http.StatusBadRequest)
+		appErrors.WriteError(w, http.StatusBadRequest, "invalid id")
 		return
 	}
 
@@ -23,11 +35,11 @@ func (a *api) get(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if errors.Is(err, appErrors.ErrTaskNotFound) {
 			a.log.Warn("task not found")
-			http.Error(w, "task not found", http.StatusNotFound)
+			appErrors.WriteError(w, http.StatusNotFound, "task not found")
 			return
 		}
 		a.log.Error("failed to get task", slog.Any("id", id), slog.Any("error", err))
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		appErrors.WriteError(w, http.StatusInternalServerError, "internal server error")
 		return
 	}
 
@@ -36,7 +48,7 @@ func (a *api) get(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(task); err != nil {
 		a.log.Error("error encoding tasks", slog.Any("error", err))
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		appErrors.WriteError(w, http.StatusInternalServerError, "internal server error")
 		return
 	}
 }

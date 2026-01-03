@@ -11,10 +11,11 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/require"
+
 	"github.com/sborsh1kmusora/todo/internal/api/todo/mocks"
 	appErrors "github.com/sborsh1kmusora/todo/internal/errors"
 	"github.com/sborsh1kmusora/todo/internal/model"
-	"github.com/stretchr/testify/require"
 )
 
 func TestAPI_get(t *testing.T) {

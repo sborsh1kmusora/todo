@@ -1,0 +1,204 @@
+basePath: /
+definitions:
+  errors.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  model.Task:
+    properties:
+      created_at:
+        example: "2026-01-01"
+        type: string
+      desc:
+        example: Реализовать CRUD операции
+        type: string
+      id:
+        example: 1
+        type: integer
+      is_done:
+        example: false
+        type: boolean
+      title:
+        example: Написать web сервис
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: REST API для управления задачами
+  title: Todo API
+  version: "1.0"
+paths:
+  /todos:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список задач с фильтрацией и пагинацией
+      parameters:
+      - description: Фильтр по статусу выполнения задачи
+        in: query
+        name: isDone
+        type: boolean
+      - description: Количество задач (по умолчанию 20, максимум 100)
+        in: query
+        maximum: 100
+        minimum: 1
+        name: limit
+        type: integer
+      - description: Смещение (offset) для пагинации
+        in: query
+        minimum: 0
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Task'
+            type: array
+        "400":
+          description: Некорректные query-параметры
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+      summary: Получить список задач
+      tags:
+      - todos
+    post:
+      consumes:
+      - application/json
+      description: Создаёт новую задачу
+      parameters:
+      - description: Задача для создания
+        in: body
+        name: task
+        required: true
+        schema:
+          $ref: '#/definitions/model.Task'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Задача успешно создана
+        "400":
+          description: Невалидное тело запроса или пустой title
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+        "409":
+          description: Задача уже существует
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+      summary: Создать задачу
+      tags:
+      - todos
+  /todos/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет задачу по идентификатору
+      parameters:
+      - description: ID задачи
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Задача успешно удалена
+        "400":
+          description: Некорректный ID
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+        "404":
+          description: Задача не найдена
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+      summary: Удалить задачу
+      tags:
+      - todos
+    get:
+      consumes:
+      - application/json
+      description: Возвращает задачу по идентификатору
+      parameters:
+      - description: ID задачи
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Task'
+        "400":
+          description: Некорректный ID
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+        "404":
+          description: Задача не найдена
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+      summary: Получить задачу
+      tags:
+      - todos
+    put:
+      consumes:
+      - application/json
+      description: Обновляет существующую задачу по ID
+      parameters:
+      - description: ID задачи
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные для обновления задачи
+        in: body
+        name: task
+        required: true
+        schema:
+          $ref: '#/definitions/model.Task'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Задача успешно обновлена
+        "400":
+          description: Некорректный ID или тело запроса
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+        "404":
+          description: Задача не найдена
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+      summary: Обновить задачу
+      tags:
+      - todos
+swagger: "2.0"

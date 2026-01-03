@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strconv"
 
+	appErrors "github.com/sborsh1kmusora/todo/internal/errors"
 	"github.com/sborsh1kmusora/todo/internal/model"
 )
 
@@ -16,6 +17,19 @@ const (
 	maxLimit     = 100
 )
 
+// ListTasks godoc
+// @Summary Получить список задач
+// @Description Возвращает список задач с фильтрацией и пагинацией
+// @Tags todos
+// @Accept json
+// @Produce json
+// @Param isDone query bool false "Фильтр по статусу выполнения задачи"
+// @Param limit query int false "Количество задач (по умолчанию 20, максимум 100)" minimum(1) maximum(100)
+// @Param offset query int false "Смещение (offset) для пагинации" minimum(0)
+// @Success 200 {array} model.Task
+// @Failure 400 {object} errors.ErrorResponse "Некорректные query-параметры"
+// @Failure 500 {object} errors.ErrorResponse "Внутренняя ошибка сервера"
+// @Router /todos [get]
 func (a *api) list(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -27,7 +41,7 @@ func (a *api) list(w http.ResponseWriter, r *http.Request) {
 		v, err := strconv.ParseBool(isDoneStr)
 		if err != nil {
 			a.log.Error("failed to parse isDone query parameter", slog.String("isDone", isDoneStr))
-			http.Error(w, "invalid isDone value", http.StatusBadRequest)
+			appErrors.WriteError(w, http.StatusBadRequest, "invalid isDone value")
 			return
 		}
 		isDone = &v
@@ -36,7 +50,7 @@ func (a *api) list(w http.ResponseWriter, r *http.Request) {
 	limit, offset, err := parsePagination(q)
 	if err != nil {
 		a.log.Error("failed to parse pagination", slog.String("error", err.Error()))
-		http.Error(w, "invalid pagination values", http.StatusBadRequest)
+		appErrors.WriteError(w, http.StatusBadRequest, "invalid pagination values")
 		return
 	}
 
@@ -49,7 +63,7 @@ func (a *api) list(w http.ResponseWriter, r *http.Request) {
 	tasks, err := a.serv.List(ctx, filter)
 	if err != nil {
 		a.log.Error("error listing tasks", slog.Any("error", err))
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		appErrors.WriteError(w, http.StatusInternalServerError, "internal server error")
 		return
 	}
 
@@ -60,7 +74,7 @@ func (a *api) list(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewEncoder(w).Encode(tasks); err != nil {
 		a.log.Error("error encoding tasks", slog.Any("error", err))
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		appErrors.WriteError(w, http.StatusInternalServerError, "internal server error")
 		return
 	}
 }
